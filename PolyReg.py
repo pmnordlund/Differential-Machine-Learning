@@ -1,7 +1,5 @@
 import numpy as np
 
-#class PolyReg:
-
 # Function returns theta as OLS coefficients        
 def OLS(X,Y):
     #beta = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(Y)
@@ -56,7 +54,7 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
         dt = option.expiry - option.start
 
         
-    # prices without regularization 
+    # Prices without regularization 
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
     S0,ST = model.get_class_prices(dt=dt, amount=n, center=center, scale=scale, normals_ST=normals)
     option_payoff = option.option_class_payoff(ST)
@@ -68,8 +66,6 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
     theta = thetaReg(w=1, X=X, Y=Y, C=option_payoff, D=D) 
     thetaHalfHalf = thetaReg(w=w1, X=X, Y=Y, C=option_payoff, D=D)
     thetaDeltaOnly = thetaReg(w=w2, X=X, Y=Y, C=option_payoff, D=D)
-    thetaOneOne = thetaRegGeneral(w1=1,w2=1, X=X, Y=Y, C=option_payoff, D=D)
-
     
     poly_price = np.matmul(X,theta)
     truePrice = model.class_option_price(Option=option,spots=S0)
@@ -77,17 +73,14 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
     simulatedDeltas = np.reshape(dF(theta=theta,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasHalfHalf = np.reshape(dF(theta=thetaHalfHalf,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasDeltaOnly = np.reshape(dF(theta=thetaDeltaOnly,S0=S0,p=p,n=n), (-1, 1))
-    simulatedDeltasOneOne = np.reshape(dF(theta=thetaOneOne,S0=S0,p=p,n=n), (-1, 1))
-
 
     # Gather all into one array and sort by S0 ascending 
     all_results = np.hstack((S0,poly_price,truePrice,trueDelta,simulatedDeltas,
                            simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly, simulatedDeltasOneOne))
     all_results = all_results[all_results[:,0].argsort(),]
     
-    #Compute MSE
+    # Compute MSE
     MSE_poly = float(np.nanmean((truePrice-poly_price)**2))
-    MSE_oneone_delta = float(np.nanmean((trueDelta-simulatedDeltasOneOne)**2))
     MSE_priceonly_delta = float(np.nanmean((trueDelta-simulatedDeltas)**2))
     MSE_deltaonly_delta = float(np.nanmean((trueDelta-simulatedDeltasDeltaOnly)**2))
     MSE_halfhalf_delta = float(np.nanmean((trueDelta-simulatedDeltasHalfHalf)**2))
@@ -103,7 +96,6 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
             'D_estimates_unsorted':D,
             'MSE_poly':MSE_poly,
             'MSE_priceonly_delta':MSE_priceonly_delta,
-            'MSE_oneone_delta':MSE_oneone_delta,
             'MSE_deltaonly_delta':MSE_deltaonly_delta,
             'MSE_halfhalf_delta':MSE_halfhalf_delta,}
 
@@ -119,10 +111,7 @@ def compute_prices_and_deltas_uniform(model,option,p,n,dt=None,center=None,scale
     # Uniform bounds
     lower=0.0001
     upper=2.5
-
-    # prices without regularization 
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
-    #S0,ST = model.get_class_prices(dt=dt, amount=n, center=center, scale=scale, normals_ST=normals)
 
     S0 = np.linspace(lower, upper, n)
     S0 = np.reshape(S0, (-1, 1)) # needs to be a 2d matrix (amount,1)
@@ -130,40 +119,30 @@ def compute_prices_and_deltas_uniform(model,option,p,n,dt=None,center=None,scale
 
     option_payoff = option.option_class_payoff(ST)
     X = EstimateX(S0=S0,p=p,n=n)
-    # deltas with regularization 
+    # Deltas with regularization 
     Y = EstimateY(S0=S0, p=p, n=n)
     D = model.compute_class_D_estimate(Option=option,normals=normals,spot_start=S0,
                                        spot_end=ST, epsilon=epsilon, D_type=D_type)
     theta = thetaReg(w=1, X=X, Y=Y, C=option_payoff, D=D) 
     thetaHalfHalf = thetaReg(w=w1, X=X, Y=Y, C=option_payoff, D=D)
     thetaDeltaOnly = thetaReg(w=w2, X=X, Y=Y, C=option_payoff, D=D)
-    thetaOneOne = thetaRegGeneral(w1=1,w2=1, X=X, Y=Y, C=option_payoff, D=D)
-
-    
     poly_price = np.matmul(X,theta)
- 
     truePrice = model.class_option_price(Option=option,spots=S0)
-
     trueDelta = model.class_delta(Option=option,dt=dt,spots=S0)
     simulatedDeltas = np.reshape(dF(theta=theta,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasHalfHalf = np.reshape(dF(theta=thetaHalfHalf,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasDeltaOnly = np.reshape(dF(theta=thetaDeltaOnly,S0=S0,p=p,n=n), (-1, 1))
-    simulatedDeltasOneOne = np.reshape(dF(theta=thetaOneOne,S0=S0,p=p,n=n), (-1, 1))
-
 
     # Gather all into one array and sort by S0 ascending 
     all_results = np.hstack((S0,poly_price,truePrice,trueDelta,simulatedDeltas,
-                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly, simulatedDeltasOneOne))
+                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly))
     all_results = all_results[all_results[:,0].argsort(),]
     
-    #Compute MSE
+    # Compute MSE
     MSE_poly = float(np.nanmean((truePrice-poly_price)**2))
-    MSE_oneone_delta = float(np.nanmean((trueDelta-simulatedDeltasOneOne)**2))
     MSE_priceonly_delta = float(np.nanmean((trueDelta-simulatedDeltas)**2))
     MSE_deltaonly_delta = float(np.nanmean((trueDelta-simulatedDeltasDeltaOnly)**2))
     MSE_halfhalf_delta = float(np.nanmean((trueDelta-simulatedDeltasHalfHalf)**2))
-
-
 
     return {'S0':all_results[:,0],'poly_price': all_results[:,1],
             'true_price':all_results[:,2], 'true_delta':all_results[:,3],
@@ -174,7 +153,6 @@ def compute_prices_and_deltas_uniform(model,option,p,n,dt=None,center=None,scale
             'D_estimates_unsorted':D,
             'MSE_poly':MSE_poly,
             'MSE_priceonly_delta':MSE_priceonly_delta,
-            'MSE_oneone_delta':MSE_oneone_delta,
             'MSE_deltaonly_delta':MSE_deltaonly_delta,
             'MSE_halfhalf_delta':MSE_halfhalf_delta,}
 
@@ -188,7 +166,7 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
         dt = option.expiry - option.start
 
         
-    # prices without regularization 
+    # Prices without regularization 
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
     S0 = model.spread_initial_price(dt=dt,amount=n, center=center, scale=scale)
     ST = model.get_end_model_price(spot=S0,dt=dt,normals=normals,anti=True) # returns ST as tuple 
@@ -198,7 +176,7 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
     option_payoff2 = option.option_class_payoff(ST2)
     option_payoff = np.exp(-model.interest*dt) * (option_payoff1 + option_payoff2) * 0.5 # anti
     X = EstimateX(S0=S0,p=p,n=n)
-    # deltas with regularization 
+    # Deltas with regularization 
     Y = EstimateY(S0=S0, p=p, n=n)
     D = model.compute_class_D_estimate(Option=option,normals=normals,spot_start=S0,
                                        spot_end=ST, epsilon=epsilon, D_type=D_type,anti=True,return_average=True) # anti 
@@ -206,33 +184,23 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
     theta = thetaReg(w=1, X=X, Y=Y, C=option_payoff, D=D) 
     thetaHalfHalf = thetaReg(w=w1, X=X, Y=Y, C=option_payoff, D=D)
     thetaDeltaOnly = thetaReg(w=w2, X=X, Y=Y, C=option_payoff, D=D)
-    thetaOneOne = thetaRegGeneral(w1=1,w2=1, X=X, Y=Y, C=option_payoff, D=D)
-
-    
     poly_price = np.matmul(X,theta)
- 
     truePrice = model.class_option_price(Option=option,spots=S0)
-
     trueDelta = model.class_delta(Option=option,dt=dt,spots=S0)
     simulatedDeltas = np.reshape(dF(theta=theta,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasHalfHalf = np.reshape(dF(theta=thetaHalfHalf,S0=S0,p=p,n=n), (-1, 1))
     simulatedDeltasDeltaOnly = np.reshape(dF(theta=thetaDeltaOnly,S0=S0,p=p,n=n), (-1, 1))
-    simulatedDeltasOneOne = np.reshape(dF(theta=thetaOneOne,S0=S0,p=p,n=n), (-1, 1))
-
 
     # Gather all into one array and sort by S0 ascending 
     all_results = np.hstack((S0,poly_price,truePrice,trueDelta,simulatedDeltas,
                            simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly, simulatedDeltasOneOne))
     all_results = all_results[all_results[:,0].argsort(),]
     
-    #Compute MSE
+    # Compute MSE
     MSE_poly = float(np.nanmean((truePrice-poly_price)**2))
-    MSE_oneone_delta = float(np.nanmean((trueDelta-simulatedDeltasOneOne)**2))
     MSE_priceonly_delta = float(np.nanmean((trueDelta-simulatedDeltas)**2))
     MSE_deltaonly_delta = float(np.nanmean((trueDelta-simulatedDeltasDeltaOnly)**2))
     MSE_halfhalf_delta = float(np.nanmean((trueDelta-simulatedDeltasHalfHalf)**2))
-
-
 
     return {'S0':all_results[:,0],'poly_price': all_results[:,1],
             'true_price':all_results[:,2], 'true_delta':all_results[:,3],
@@ -243,7 +211,6 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
             'D_estimates_unsorted':D,
             'MSE_poly':MSE_poly,
             'MSE_priceonly_delta':MSE_priceonly_delta,
-            'MSE_oneone_delta':MSE_oneone_delta,
             'MSE_deltaonly_delta':MSE_deltaonly_delta,
             'MSE_halfhalf_delta':MSE_halfhalf_delta,}
 
