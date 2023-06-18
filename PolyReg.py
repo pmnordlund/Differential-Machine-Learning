@@ -193,7 +193,7 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
 
     # Gather all into one array and sort by S0 ascending 
     all_results = np.hstack((S0,poly_price,truePrice,trueDelta,simulatedDeltas,
-                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly, simulatedDeltasOneOne))
+                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly))
     all_results = all_results[all_results[:,0].argsort(),]
     
     # Compute MSE
