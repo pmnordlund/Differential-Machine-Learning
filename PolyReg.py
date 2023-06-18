@@ -36,7 +36,6 @@ def dF_scalar(theta,S0,p):
             delta = delta + theta[i]*i*S0**(i-1)
     return delta
         
-
 # Calculates regularized theta
 def thetaReg(w,X,Y,C,D):
     X1 = np.linalg.inv(w * np.matmul(X.transpose(),X) + (1 - w) * np.matmul(Y.transpose(),Y))
@@ -44,16 +43,13 @@ def thetaReg(w,X,Y,C,D):
     thetaReg = np.matmul(X1,X2)
     return thetaReg
 
-
-
 def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
                               w1=0.5,w2=0.001,D_type="Pathwise",epsilon=1e-03):
     if center is None:
         center = option.spot
     if dt is None:
         dt = option.expiry - option.start
-
-        
+      
     # Prices without regularization 
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
     S0,ST = model.get_class_prices(dt=dt, amount=n, center=center, scale=scale, normals_ST=normals)
@@ -76,7 +72,7 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
 
     # Gather all into one array and sort by S0 ascending 
     all_results = np.hstack((S0,poly_price,truePrice,trueDelta,simulatedDeltas,
-                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly, simulatedDeltasOneOne))
+                           simulatedDeltasHalfHalf,simulatedDeltasDeltaOnly))
     all_results = all_results[all_results[:,0].argsort(),]
     
     # Compute MSE
@@ -84,8 +80,6 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
     MSE_priceonly_delta = float(np.nanmean((trueDelta-simulatedDeltas)**2))
     MSE_deltaonly_delta = float(np.nanmean((trueDelta-simulatedDeltasDeltaOnly)**2))
     MSE_halfhalf_delta = float(np.nanmean((trueDelta-simulatedDeltasHalfHalf)**2))
-
-
 
     return {'S0':all_results[:,0],'poly_price': all_results[:,1],
             'true_price':all_results[:,2], 'true_delta':all_results[:,3],
@@ -98,8 +92,6 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
             'MSE_priceonly_delta':MSE_priceonly_delta,
             'MSE_deltaonly_delta':MSE_deltaonly_delta,
             'MSE_halfhalf_delta':MSE_halfhalf_delta,}
-
-
 
 def compute_prices_and_deltas_uniform(model,option,p,n,dt=None,center=None,scale=0.2,
                               w1=0.5,w2=0.001,D_type="Pathwise",epsilon=1e-03):
@@ -165,7 +157,6 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
     if dt is None:
         dt = option.expiry - option.start
 
-        
     # Prices without regularization 
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
     S0 = model.spread_initial_price(dt=dt,amount=n, center=center, scale=scale)
@@ -176,6 +167,7 @@ def compute_prices_and_deltas_anti(model,option,p,n,dt=None,center=None,scale=0.
     option_payoff2 = option.option_class_payoff(ST2)
     option_payoff = np.exp(-model.interest*dt) * (option_payoff1 + option_payoff2) * 0.5 # anti
     X = EstimateX(S0=S0,p=p,n=n)
+    
     # Deltas with regularization 
     Y = EstimateY(S0=S0, p=p, n=n)
     D = model.compute_class_D_estimate(Option=option,normals=normals,spot_start=S0,
