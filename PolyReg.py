@@ -55,7 +55,7 @@ def compute_prices_and_deltas(model,option,p,n,dt=None,center=None,scale=1,
     S0,ST = model.get_class_prices(dt=dt, amount=n, center=center, scale=scale, normals_ST=normals)
     option_payoff = option.option_class_payoff(ST)
     X = EstimateX(S0=S0,p=p,n=n)
-    # deltas with regularization 
+    # Deltas with regularization 
     Y = EstimateY(S0=S0, p=p, n=n)
     D = model.compute_class_D_estimate(Option=option,normals=normals,spot_start=S0,
                                        spot_end=ST, epsilon=epsilon, D_type=D_type)
@@ -106,7 +106,7 @@ def compute_prices_and_deltas_uniform(model,option,p,n,dt=None,center=None,scale
     normals = np.random.normal(loc=0.0,scale=1.0,size=(n,1))
 
     S0 = np.linspace(lower, upper, n)
-    S0 = np.reshape(S0, (-1, 1)) # needs to be a 2d matrix (amount,1)
+    S0 = np.reshape(S0, (-1, 1)) # Needs to be a 2d matrix (amount,1)
     ST = model.get_end_model_price(spot=S0,dt=dt,normals=normals)
 
     option_payoff = option.option_class_payoff(ST)
